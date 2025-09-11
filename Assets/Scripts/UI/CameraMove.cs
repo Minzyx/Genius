@@ -8,14 +8,26 @@ public class CameraTransition : MonoBehaviour
     public float moveSpeed = 2f;
     public float rotateSpeed = 2f;
 
-    public Image fadePanel; // arraste o Panel aqui
+    public Image fadePanel; // arraste o Panel preto aqui
     public float fadeSpeed = 1f;
 
+    public CanvasGroup menuDificuldade; // arraste o Canvas do menu aqui
+    public float menuFadeSpeed = 2f;
+
     private bool moving = false;
+    private bool menuFading = false;
+
+    void Start()
+    {
+        if (menuDificuldade != null)
+        {
+            menuDificuldade.alpha = 0;       // começa invisível
+            menuDificuldade.gameObject.SetActive(false);
+        }
+    }
 
     void Update()
     {
-        // Quando clicar, começa a mover + fade
         if (Input.GetMouseButtonDown(0) && !moving)
         {
             moving = true;
@@ -33,13 +45,29 @@ public class CameraTransition : MonoBehaviour
             c.a = Mathf.MoveTowards(c.a, 1f, Time.deltaTime * fadeSpeed);
             fadePanel.color = c;
 
-            // Quando a câmera chega no alvo, para o movimento
-            if (Vector3.Distance(transform.position, targetPosition) < 0.01f &&
-                Quaternion.Angle(transform.rotation, targetRotation) < 0.1f)
+            // Quando terminou de escurecer
+            if (c.a >= 1f)
             {
                 moving = false;
-                Debug.Log("Transição concluída → chamar menu de dificuldade aqui");
+                ShowMenu();
             }
         }
+
+        // Fade-in do menu
+        if (menuFading && menuDificuldade.alpha < 1f)
+        {
+            menuDificuldade.alpha += Time.deltaTime * menuFadeSpeed;
+        }
+    }
+
+    void ShowMenu()
+    {
+        if (menuDificuldade != null)
+        {
+            menuDificuldade.gameObject.SetActive(true);
+            menuFading = true;
+        }
+
+        Debug.Log("Menu de dificuldade exibido com fade-in!");
     }
 }
