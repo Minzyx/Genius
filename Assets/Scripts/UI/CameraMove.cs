@@ -1,5 +1,5 @@
-using UnityEngine;
-using System.Collections;
+﻿using UnityEngine;
+using UnityEngine.UI;
 
 public class CameraTransition : MonoBehaviour
 {
@@ -8,14 +8,14 @@ public class CameraTransition : MonoBehaviour
     public float moveSpeed = 2f;
     public float rotateSpeed = 2f;
 
-    public CanvasGroup fadePanel; // seu painel existente
+    public Image fadePanel; // arraste o Panel aqui
     public float fadeSpeed = 1f;
 
     private bool moving = false;
 
     void Update()
     {
-        // Inicia movimento no clique
+        // Quando clicar, começa a mover + fade
         if (Input.GetMouseButtonDown(0) && !moving)
         {
             moving = true;
@@ -23,33 +23,23 @@ public class CameraTransition : MonoBehaviour
 
         if (moving)
         {
-            // Movimento da c�mera
+            // Movimento da câmera
             transform.position = Vector3.Lerp(transform.position, targetPosition, Time.deltaTime * moveSpeed);
             Quaternion targetRotation = Quaternion.Euler(targetEulerAngles);
             transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * rotateSpeed);
 
-            // Checa se chegou perto do alvo
+            // Fade junto com o movimento
+            Color c = fadePanel.color;
+            c.a = Mathf.MoveTowards(c.a, 1f, Time.deltaTime * fadeSpeed);
+            fadePanel.color = c;
+
+            // Quando a câmera chega no alvo, para o movimento
             if (Vector3.Distance(transform.position, targetPosition) < 0.01f &&
                 Quaternion.Angle(transform.rotation, targetRotation) < 0.1f)
             {
                 moving = false;
-                StartCoroutine(FadePanel());
+                Debug.Log("Transição concluída → chamar menu de dificuldade aqui");
             }
         }
-    }
-
-    IEnumerator FadePanel()
-    {
-        fadePanel.alpha = 0;
-        fadePanel.gameObject.SetActive(true);
-
-        while (fadePanel.alpha < 1)
-        {
-            fadePanel.alpha += Time.deltaTime * fadeSpeed;
-            yield return null;
-        }
-
-        // Aqui voc� ativa ou mostra o menu de dificuldade
-        Debug.Log("Menu de dificuldade pronto!");
     }
 }
