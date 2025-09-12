@@ -17,6 +17,15 @@ public class CameraTransition : MonoBehaviour
     private bool moving = false;
     private bool menuFading = false;
 
+    private bool blockMenu = false; // impede de mostrar o menu
+
+    public void BlockMenu()
+    {
+        blockMenu = true;
+        if (menuDificuldade != null)
+            menuDificuldade.gameObject.SetActive(false);
+    }
+
     void Start()
     {
         if (menuDificuldade != null)
@@ -62,7 +71,7 @@ public class CameraTransition : MonoBehaviour
 
     void ShowMenu()
     {
-        if (menuDificuldade != null)
+        if (menuDificuldade != null && !blockMenu) // só mostra se não bloqueado
         {
             menuDificuldade.gameObject.SetActive(true);
             menuFading = true;
@@ -70,4 +79,5 @@ public class CameraTransition : MonoBehaviour
 
         Debug.Log("Menu de dificuldade exibido com fade-in!");
     }
+
 }
