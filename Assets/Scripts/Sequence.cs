@@ -10,9 +10,18 @@ public class Sequence : MonoBehaviour
     [Serializable]
     public class Item
     {
+        [Tooltip("Botão colorido que mudará de cor.")]
         public GameObject Button;
+
+        [Tooltip("Material padrão.")]
         public Material normalMaterial;
+
+        [Tooltip("Material Neon.")]
         public Material neonMaterial;
+
+        [Tooltip("Áudio que o botão emite.")]
+        public AudioSource buttonAudio;
+
         [HideInInspector] public Vector3 posInicial;
     }
 
@@ -27,26 +36,24 @@ public class Sequence : MonoBehaviour
     [Header("Acertos")]
     [Min(0)] public int Acertos = 0;
 
+    [Space(100)]
     [Header("UI")]
     public TextMeshProUGUI textoPontos;
     public TextMeshProUGUI textoRound;
     public GameObject WinSceneCanvas;
     public GameObject LoseSceneCanvas;
     public Button PlayGame;
-    private CanvasGroup playCanvasGroup;
     public GameObject PlayerCanvas;
-
-    [Header("Menu Inicial e Dificuldade")]
-    public CameraTransition cameraTransition;
-    public CanvasGroup menuDificuldade; // Canvas do menu de dificuldade
+    public TMP_Dropdown dropdown;
 
     private List<int> indices = new List<int>();
     private int ultimoIndice = -1;
     private int penultimoIndice = -1;
 
-    private float normalTime = 1250;
-    private int minTime = 350;
+    private float normalTime = 1550;
+    private int minTime = 500;
     private bool podeJogar = false;
+
     private int indiceJogador = 0;
     private int indiceHover = -1;
 
@@ -63,26 +70,22 @@ public class Sequence : MonoBehaviour
         LoseSceneCanvas.SetActive(false);
 
         foreach (var item in items)
+        {
             if (item.Button != null)
                 item.posInicial = item.Button.transform.position;
 
-        // Configura fade do botão Play
-        if (PlayGame != null)
-        {
-            playCanvasGroup = PlayGame.GetComponent<CanvasGroup>();
-            if (playCanvasGroup == null)
-                playCanvasGroup = PlayGame.gameObject.AddComponent<CanvasGroup>();
-
-            playCanvasGroup.alpha = 0f;
-            PlayGame.gameObject.SetActive(false);
+            if (item.buttonAudio != null)
+            {
+                item.buttonAudio.playOnAwake = false;
+                item.buttonAudio.loop = false;
+                item.buttonAudio.spatialBlend = 0f;
+                item.buttonAudio.dopplerLevel = 0f;
+                item.buttonAudio.priority = 16;
+                item.buttonAudio.volume = 0.5f;
+            }
         }
 
-        // Esconde menu de dificuldade no início
-        if (menuDificuldade != null)
-        {
-            menuDificuldade.alpha = 0f;
-            menuDificuldade.gameObject.SetActive(false);
-        }
+        dropdown.onValueChanged.AddListener(SelectDificuldade);
     }
 
     void Update()
@@ -94,7 +97,9 @@ public class Sequence : MonoBehaviour
         int novoHover = -1;
 
         if (Physics.Raycast(ray, out hit))
+        {
             novoHover = items.FindIndex(x => x.Button == hit.transform.gameObject);
+        }
 
         indiceHover = novoHover;
 
@@ -109,7 +114,8 @@ public class Sequence : MonoBehaviour
                 Vector3.Lerp(items[i].Button.transform.position, alvo, Time.deltaTime * hoverVelocidade);
         }
 
-        if (!podeJogar) return;
+        if (!podeJogar)
+            return;
 
         if (Input.GetMouseButtonDown(0) && indiceHover != -1)
         {
@@ -137,6 +143,7 @@ public class Sequence : MonoBehaviour
                     {
                         WinSceneCanvas.SetActive(true);
                         PlayGame.gameObject.SetActive(true);
+                        dropdown.gameObject.SetActive(true);
                         var text = PlayGame.GetComponentInChildren<TextMeshProUGUI>();
                         text.text = "Reiniciar";
                         return;
@@ -147,9 +154,9 @@ public class Sequence : MonoBehaviour
             }
             else
             {
-                textoPontos.gameObject.SetActive(false);
                 LoseSceneCanvas.SetActive(true);
                 PlayGame.gameObject.SetActive(true);
+                dropdown.gameObject.SetActive(true);
                 var text = PlayGame.GetComponentInChildren<TextMeshProUGUI>();
                 text.text = "Tentar Novamente";
                 podeJogar = false;
@@ -157,7 +164,6 @@ public class Sequence : MonoBehaviour
         }
     }
 
-    // ================== Métodos principais ==================
     public void Jogar()
     {
         Acertos = 0;
@@ -167,63 +173,43 @@ public class Sequence : MonoBehaviour
         normalTime = 1250;
 
         PlayerCanvas.SetActive(true);
+        PlayGame.gameObject.SetActive(false);
+        dropdown.gameObject.SetActive(false);
         WinSceneCanvas.SetActive(false);
         LoseSceneCanvas.SetActive(false);
 
-        if (PlayGame != null)
-            PlayGame.gameObject.SetActive(false);
-
-        if (menuDificuldade != null)
-            menuDificuldade.gameObject.SetActive(false); // esconde menu
-
-        if (cameraTransition != null)
-            cameraTransition.BlockMenu();
-
         RodarSequencia();
     }
-
+    
     public void SelectDificuldade(int indice)
     {
         switch (indice)
         {
-            case 0: dificuldade = Dificuldade.Facil; break;
-            case 1: dificuldade = Dificuldade.Medio; break;
-            case 2: dificuldade = Dificuldade.Dificil; break;
-            case 3: dificuldade = Dificuldade.Inifinito; break;
-            default: dificuldade = Dificuldade.Facil; break;
+            case 0:
+                dificuldade = Dificuldade.Facil;
+                normalTime = 1550;
+                minTime = 500;
+                break;
+            case 1:
+                dificuldade = Dificuldade.Medio;
+                normalTime = 1000;
+                minTime = 350;
+                break;
+            case 2:
+                dificuldade = Dificuldade.Dificil;
+                normalTime = 750;
+                minTime = 200;
+                break;
+            case 3:
+                dificuldade = Dificuldade.Inifinito;
+                normalTime = 800;
+                minTime = 550;
+                break;
+
+            default:
+                dificuldade = Dificuldade.Facil;
+                break;
         }
-    }
-
-    public void MostrarBotaoJogar(int indice)
-    {
-        SelectDificuldade(indice);
-
-        if (menuDificuldade != null)
-        {
-            menuDificuldade.alpha = 0f;
-            menuDificuldade.gameObject.SetActive(false);
-        }
-
-        if (PlayGame != null)
-        {
-            PlayGame.gameObject.SetActive(true);
-            StartCoroutine(FadeInBotao(playCanvasGroup, 0.5f));
-        }
-    }
-
-    private IEnumerator FadeInBotao(CanvasGroup cg, float duracao)
-    {
-        float tempo = 0f;
-        cg.alpha = 0f;
-
-        while (tempo < duracao)
-        {
-            tempo += Time.deltaTime;
-            cg.alpha = Mathf.Clamp01(tempo / duracao);
-            yield return null;
-        }
-
-        cg.alpha = 1f;
     }
 
     void RodarSequencia()
@@ -243,8 +229,7 @@ public class Sequence : MonoBehaviour
         indices.Add(novoIndice);
         indiceJogador = 0;
 
-        string qtd = dificuldade == Dificuldade.Facil ? "10" : dificuldade == Dificuldade.Medio ? "20" :
-                     dificuldade == Dificuldade.Dificil ? "30" : dificuldade == Dificuldade.Inifinito ? "∞" : "?";
+        string qtd = dificuldade == Dificuldade.Facil ? "10" : dificuldade == Dificuldade.Medio ? "20" : dificuldade == Dificuldade.Dificil ? "30" : dificuldade == Dificuldade.Inifinito ? "∞" : "?";
 
         textoRound.text = $"{indices.Count} / {qtd}";
 
@@ -264,6 +249,9 @@ public class Sequence : MonoBehaviour
             if (rend == null) continue;
 
             rend.material = items[i].neonMaterial;
+
+            items[i].buttonAudio.PlayOneShot(items[i].buttonAudio.clip, 0.4f);
+
             yield return new WaitForSeconds(normalTime / 1000f);
 
             rend.material = items[i].normalMaterial;
@@ -282,12 +270,16 @@ public class Sequence : MonoBehaviour
         Vector3 tamanhoPrimeiro = new Vector3(tamanhoOrigin.x * scaleMultiplierIn, tamanhoOrigin.y, tamanhoOrigin.z * scaleMultiplierIn);
         Vector3 tamanhoSegundo = new Vector3(tamanhoOrigin.x * scaleMultiplierOut, tamanhoOrigin.y, tamanhoOrigin.z * scaleMultiplierOut);
 
-        float t = 0;
+        float t = 0f;
+
+        var src = items[indice].buttonAudio;
+        if (src.isPlaying) src.Stop();
+        src.PlayOneShot(src.clip, 0.35f);
+
         while (t < 1f)
         {
-            t += Time.deltaTime * hoverVelocidade * 2;
-            items[indice].Button.transform.localScale =
-                Vector3.Lerp(tamanhoOrigin, tamanhoPrimeiro, t);
+            t += Time.deltaTime * hoverVelocidade * 2f;
+            items[indice].Button.transform.localScale = Vector3.Lerp(tamanhoOrigin, tamanhoPrimeiro, t);
             yield return null;
         }
 
@@ -295,22 +287,20 @@ public class Sequence : MonoBehaviour
         yield return new WaitForSeconds(0.15f);
         rend.material = items[indice].normalMaterial;
 
-        t = 0;
+        t = 0f;
         while (t < 1f)
         {
             t += Time.deltaTime * hoverVelocidade * 1.5f;
-            items[indice].Button.transform.localScale =
-                Vector3.Lerp(tamanhoPrimeiro, tamanhoSegundo, t);
+            items[indice].Button.transform.localScale = Vector3.Lerp(tamanhoPrimeiro, tamanhoSegundo, t);
             yield return null;
         }
 
-        t = 0;
+        t = 0f;
         while (t < 1f)
         {
             t += Time.deltaTime * hoverVelocidade;
             float elastic = Mathf.Sin(t * Mathf.PI * 0.5f);
-            items[indice].Button.transform.localScale =
-                Vector3.Lerp(tamanhoSegundo, tamanhoOrigin, elastic);
+            items[indice].Button.transform.localScale = Vector3.Lerp(tamanhoSegundo, tamanhoOrigin, elastic);
             yield return null;
         }
     }

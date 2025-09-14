@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class CameraTransition : MonoBehaviour
@@ -11,29 +12,10 @@ public class CameraTransition : MonoBehaviour
     public Image fadePanel; // arraste o Panel preto aqui
     public float fadeSpeed = 1f;
 
-    public CanvasGroup menuDificuldade; // arraste o Canvas do menu aqui
-    public float menuFadeSpeed = 2f;
+    public string nextSceneName = "SampleScene";
 
     private bool moving = false;
-    private bool menuFading = false;
 
-    private bool blockMenu = false; // impede de mostrar o menu
-
-    public void BlockMenu()
-    {
-        blockMenu = true;
-        if (menuDificuldade != null)
-            menuDificuldade.gameObject.SetActive(false);
-    }
-
-    void Start()
-    {
-        if (menuDificuldade != null)
-        {
-            menuDificuldade.alpha = 0;       // começa invisível
-            menuDificuldade.gameObject.SetActive(false);
-        }
-    }
 
     void Update()
     {
@@ -54,30 +36,16 @@ public class CameraTransition : MonoBehaviour
             c.a = Mathf.MoveTowards(c.a, 1f, Time.deltaTime * fadeSpeed);
             fadePanel.color = c;
 
-            // Quando terminou de escurecer
-            if (c.a >= 1f)
+            // Quando a tela ficar toda preta, troca de cena
+            if (Mathf.Approximately(c.a, 1f))
             {
-                moving = false;
-                ShowMenu();
+                SceneManager.LoadScene(nextSceneName);
             }
         }
 
-        // Fade-in do menu
-        if (menuFading && menuDificuldade.alpha < 1f)
-        {
-            menuDificuldade.alpha += Time.deltaTime * menuFadeSpeed;
-        }
+        
     }
 
-    void ShowMenu()
-    {
-        if (menuDificuldade != null && !blockMenu) // só mostra se não bloqueado
-        {
-            menuDificuldade.gameObject.SetActive(true);
-            menuFading = true;
-        }
-
-        Debug.Log("Menu de dificuldade exibido com fade-in!");
-    }
+   
 
 }
