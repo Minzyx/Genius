@@ -62,6 +62,8 @@ public class Sequence : MonoBehaviour
     public float scaleMultiplierIn = 0.95f;
     public float scaleMultiplierOut = 1.2f;
     public float hoverVelocidade = 10;
+    
+    public AudioSource somClick;
 
     private void Awake()
     {
@@ -166,6 +168,11 @@ public class Sequence : MonoBehaviour
 
     public void Jogar()
     {
+
+        // Toca o som do botão
+        if (somClick != null)
+            somClick.Play();
+
         Acertos = 0;
         indices.Clear();
         ultimoIndice = -1;
